@@ -40,3 +40,9 @@ variable "instance_type" {
   description = "type of ec2 instance"
   type        = string
 }
+
+variable "jenkins_admin_password" {
+  description = "Jenkins password for 'admin'"
+  type        = string
+  default     = "mysecretjenkinspwdq1m4"   
+}

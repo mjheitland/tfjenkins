@@ -4,27 +4,42 @@ resource "aws_key_pair" "tfmh_keypair" {
   public_key = file(var.public_key_path)
 }
 
-data "aws_ami" "tfmh_server_ami" {
+data "aws_ami" "amazon_linux_2" {
   most_recent = true
   owners = ["amazon"]
   filter {
     name   = "name"
-    values = ["amzn-ami-hvm*-x86_64-gp2"]
+    values = ["amzn2-ami-hvm-2.0.*-x86_64-gp2"]
   }
-}
+  filter {
+      name   = "root-device-type"
+      values = ["ebs"]
+    }
+  filter {
+    name   = "virtualization-type"
+    values = ["hvm"]
+  }  
+  filter {
+    name   = "architecture"
+    values = ["x86_64"]
+  }  
+}  
+
 data "template_file" "tfmh_userdata" {
   count = length(var.subpub_ids)
 
   template = file("${path.module}/userdata.tpl")
   vars = {
-    subnets = element(var.subpub_ids, count.index)
+    subnet = element(var.subpub_ids, count.index)
+    jenkins_admin_password = var.jenkins_admin_password
   }
 }
+
 resource "aws_instance" "tfmh_server" {
   count = length(var.subpub_ids)
 
   instance_type           = var.instance_type
-  ami                     = data.aws_ami.tfmh_server_ami.id
+  ami                     = data.aws_ami.amazon_linux_2.id
   key_name                = aws_key_pair.tfmh_keypair.id
   subnet_id               = element(var.subpub_ids, count.index)
   vpc_security_group_ids  = [var.sg_id]
@@ -42,8 +57,8 @@ resource "aws_security_group" "tfmh_alb" {
   vpc_id        = var.vpc_id
   # Allow all inbound HTTP requests
   ingress {
-    from_port   = 80
-    to_port     = 80
+    from_port   = 8080
+    to_port     = 8080
     protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
   }
@@ -70,7 +85,7 @@ resource "aws_lb" "tfmh_lb" {
 
 resource "aws_lb_listener" "front_end" {
   load_balancer_arn = aws_lb.tfmh_lb.arn
-  port              = "80"
+  port              = "8080"
   protocol          = "HTTP"
   default_action {
     type             = "forward"
@@ -80,7 +95,7 @@ resource "aws_lb_listener" "front_end" {
 
 resource "aws_lb_target_group" "tfmh_lbtrggrp" {
   name     = "tfmh-lbtrggrp"
-  port     = 80
+  port     = 8080
   protocol = "HTTP"
   vpc_id   = var.vpc_id
   health_check {
@@ -99,5 +114,5 @@ resource "aws_lb_target_group_attachment" "tfmh_lbtrggrpatt" {
 
   target_group_arn = aws_lb_target_group.tfmh_lbtrggrp.arn
   target_id        = aws_instance.tfmh_server[count.index].id
-  port             = 80
+  port             = 8080
 }

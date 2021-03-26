@@ -27,3 +27,9 @@ variable "sg_id" {
   description = "id of security group"
   type        = string
 }
+
+variable "jenkins_admin_password" {
+  description = "Jenkins password for 'admin'"
+  type        = string
+  default     = "mysecretjenkinspwdq1m4"   
+}

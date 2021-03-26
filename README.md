@@ -1,4 +1,8 @@
-This Terraform project shows how to specify and deploy the following components:
+# tfjenkins
+
+This Terraform project shows how to deploy ec2 instances behind a load balancer running Jenkins
+
+It deploys the following components:
 + VPC
 + 1 internet gateway
 + 1 public subnet   (number can be easily modified changing variables in terraform.tfvars)
