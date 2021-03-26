@@ -1,0 +1,6 @@
+.terraform
+.DS_Store
+*.swp
+terraform.tfstate
+terraform.tfstate.backup
+
